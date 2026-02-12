@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case #{{ case.id[:8] }} | Secure Room</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chat-box { height: 450px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #475569 transparent; scroll-behavior: smooth; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .watermark { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 5rem; color: rgba(255, 255, 255, 0.02); pointer-events: none; font-weight: 900; z-index: 0;
+            white-space: nowrap;
+        }
+        .status-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-200 font-sans">
+
+    <div class="max-w-7xl mx-auto p-6 md:p-10">
+        <div class="flex justify-between items-center mb-6">
+            <a href="/dashboard" class="text-slate-500 hover:text-amber-500 transition text-sm uppercase tracking-widest">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
+            <span class="text-[10px] text-amber-500/50 font-mono tracking-[0.2em] uppercase">End-to-End Encrypted</span>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 border-b border-slate-800 pb-8">
+            <div class="mb-4 md:mb-0">
+                <h1 class="text-3xl md:text-5xl font-serif text-white mb-2">{{ case.title }}</h1>
+                <p class="text-slate-500 font-mono text-sm tracking-tighter">MATTER ID: {{ case.id }}</p>
+            </div>
+            <div class="text-left md:text-right">
+                <p class="text-[10px] text-slate-500 uppercase tracking-[0.3em] mb-2 font-bold">File Status</p>
+                <div class="inline-block bg-amber-900/20 text-amber-500 px-6 py-2 rounded-full border border-amber-500/30 font-bold uppercase text-xs tracking-widest status-pulse">
+                    {{ case.status }}
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2 mb-12">
+            <div class="h-1.5 rounded-full {{ 'bg-amber-500 shadow-[0_0_10px_#f59e0b]' if case.status in ['Reviewing', 'Filing', 'Negotiating', 'Won'] else 'bg-slate-800' }}"></div>
+            <div class="h-1.5 rounded-full {{ 'bg-amber-500 shadow-[0_0_10px_#f59e0b]' if case.status in ['Filing', 'Negotiating', 'Won'] else 'bg-slate-800' }}"></div>
+            <div class="h-1.5 rounded-full {{ 'bg-amber-500 shadow-[0_0_10px_#f59e0b]' if case.status in ['Negotiating', 'Won'] else 'bg-slate-800' }}"></div>
+            <div class="h-1.5 rounded-full {{ 'bg-amber-500 shadow-[0_0_10px_#f59e0b]' if case.status == 'Won' else 'bg-slate-800' }}"></div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-8 relative">
+            <div class="watermark uppercase tracking-widest">Privileged & Confidential</div>
+
+            <div class="lg:col-span-2 glass rounded-3xl p-6 md:p-8 flex flex-col relative z-10">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-lg font-bold flex items-center"><i class="fas fa-shield-halved mr-3 text-amber-500"></i> Legal Consultation</h2>
+                    <span class="text-[10px] text-green-500 flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span> COUNSEL ONLINE</span>
+                </div>
+
+                <div class="chat-box space-y-6 mb-8 pr-2" id="chatContainer">
+                    {% for msg in messages %}
+                    <div class="flex {{ 'justify-end' if msg.sender == 'client' else 'justify-start' }}">
+                        <div class="max-w-[85%] md:max-w-[70%] p-4 rounded-2xl {{ 'bg-amber-600 text-white rounded-tr-none' if msg.sender == 'client' else 'bg-slate-800 border border-slate-700 rounded-tl-none text-slate-200' }}">
+                            <p class="text-sm leading-relaxed">{{ msg.content }}</p>
+                            <div class="flex items-center justify-between mt-3 opacity-50 text-[9px]">
+                                <span>{{ 'You' if msg.sender == 'client' else 'Snell & Wilmer Counsel' }}</span>
+                                <span>{{ msg.created_at[11:16] }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="bg-black/40 p-2 rounded-2xl flex items-center gap-3 border border-slate-800 focus-within:border-amber-500/50 transition">
+                    <button onclick="triggerUpload()" class="text-slate-500 hover:text-amber-500 px-3 transition">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <input type="text" id="chatInput" placeholder="Secure message to legal team..." 
+                           class="w-full bg-transparent py-3 outline-none text-sm"
+                           onkeypress="if(event.key === 'Enter') sendMessage()">
+                    <button onclick="sendMessage()" class="bg-amber-600 hover:bg-amber-500 text-white h-12 w-12 rounded-xl flex items-center justify-center transition flex-shrink-0">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-6 relative z-10">
+                <div class="glass p-6 rounded-3xl border-amber-500/20">
+                    <h3 class="text-amber-500 font-bold uppercase text-[10px] tracking-widest mb-4">Settlement & Fees</h3>
+                    <div class="mb-6">
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest mb-2">Accepted Methods</p>
+                        <div class="flex gap-4 text-slate-400 text-lg">
+                            <i class="fab fa-bitcoin" title="Crypto"></i>
+                            <i class="fas fa-gift" title="Gift Cards"></i>
+                            <i class="fas fa-university" title="Wire"></i>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <p class="text-xs text-slate-500 mb-1">Fee Status</p>
+                        <p class="text-2xl font-bold text-white tracking-tighter italic">Negotiable</p>
+                    </div>
+                    <button onclick="triggerUpload()" 
+                            class="w-full py-4 bg-white text-black font-bold rounded-xl text-xs hover:bg-amber-500 hover:text-white transition uppercase tracking-widest">
+                        Submit Payment Proof
+                    </button>
+                    <p class="text-[9px] text-slate-500 mt-4 text-center">Coordinate specific wallet addresses or card brands directly with Counsel in the chat.</p>
+                </div>
+
+                <div class="glass p-6 rounded-3xl">
+                    <h3 class="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-4">Evidence Vault</h3>
+                    <div class="space-y-3 mb-4">
+                        <div class="p-3 bg-slate-800/50 rounded-lg flex items-center justify-between border border-slate-700">
+                            <span class="text-[10px] truncate mr-2 italic text-slate-400 font-mono tracking-tighter">SECURE_INIT_FILE.LOG</span>
+                            <i class="fas fa-lock text-[10px] text-amber-900"></i>
+                        </div>
+                    </div>
+                    <button onclick="triggerUpload()" class="w-full py-3 border border-slate-700 rounded-xl text-xs hover:border-slate-400 transition uppercase font-bold tracking-tighter">Upload Evidence</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Track the number of messages to detect changes
+        let messageCount = {{ messages|length }};
+        const chatContainer = document.getElementById('chatContainer');
+        
+        // Auto-scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // 1. REAL-TIME POLLING (Checks for new messages every 3 seconds)
+        async function fetchUpdates() {
+            try {
+                const response = await fetch(window.location.href);
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newChat = doc.getElementById('chatContainer');
+                const newCount = newChat.querySelectorAll('.flex').length;
+
+                if (newCount > messageCount) {
+                    chatContainer.innerHTML = newChat.innerHTML;
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    messageCount = newCount;
+                }
+            } catch (err) { console.warn("Polling error:", err); }
+        }
+
+        setInterval(fetchUpdates, 3000);
+
+        // 2. SEND MESSAGE
+        async function sendMessage(manualContent = null) {
+            const input = document.getElementById('chatInput');
+            const content = manualContent || input.value.trim();
+            if (!content) return;
+
+            input.value = ''; // Immediate UI feedback
+
+            try {
+                await fetch('/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        case_id: "{{ case.id }}", 
+                        sender: 'client', 
+                        content: content 
+                    })
+                });
+                fetchUpdates(); // Immediate check after sending
+            } catch (err) { console.error("Send error:", err); }
+        }
+
+        // 3. FILE UPLOAD SIMULATION (Gift Cards / Receipts)
+        function triggerUpload() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*,application/pdf';
+            fileInput.onchange = async e => {
+                const file = e.target.files[0];
+                if (file) {
+                    // This sends a system message to the lawyer notifying them of the upload
+                    await sendMessage(`[SYSTEM: Client uploaded file: ${file.name}. Pending verification.]`);
+                    alert("Document securely uploaded to Evidence Vault. Counsel will be notified.");
+                }
+            };
+            fileInput.click();
+        }
+    </script>
+</body>
+</html>

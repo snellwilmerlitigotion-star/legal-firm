@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matter Dashboard | Snell & Wilmer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.9);
+            transform: translateY(-2px);
+            border-color: #f59e0b;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-200 min-h-screen font-sans antialiased">
+
+    <nav class="border-b border-slate-800 bg-[#020617]/80 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-6 h-20 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(217,119,6,0.3)]">
+                    <i class="fas fa-gavel text-white text-lg"></i>
+                </div>
+                <span class="font-serif text-xl tracking-widest uppercase text-white">Counsel Portal</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <span class="text-xs text-slate-500 font-mono hidden md:block">{{ session.get('user') }}</span>
+                <a href="/" class="text-xs font-bold text-slate-400 hover:text-white transition uppercase tracking-widest">Sign Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto p-6 md:p-10">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-serif text-white mb-3">Active Matters</h1>
+                <p class="text-slate-500 max-w-xl">Secure access to your litigation files, evidence vault, and direct communication with Associate Counsel.</p>
+            </div>
+            <div class="bg-slate-900/50 px-6 py-3 rounded-2xl border border-slate-800">
+                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1">Total Files</p>
+                <p class="text-2xl font-serif text-amber-500">{{ cases|length }}</p>
+            </div>
+        </div>
+
+        <div class="grid gap-6">
+            {% for case in cases %}
+            <a href="/case/{{ case.id }}" class="glass-card group p-6 md:p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div class="flex items-start gap-5">
+                    <div class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-amber-500 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                        <i class="fas fa-folder-open text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white group-hover:text-amber-500 transition-colors mb-1">{{ case.title }}</h3>
+                        <div class="flex items-center gap-3 text-xs font-mono text-slate-500 uppercase tracking-tighter">
+                            <span>ID: {{ case.id[:12] }}...</span>
+                            <span class="w-1 h-1 bg-slate-700 rounded-full"></span>
+                            <span>Ref: MAT-2026-{{ loop.index }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between w-full md:w-auto gap-8">
+                    <div class="text-left md:text-right">
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-black uppercase tracking-widest">
+                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span>
+                            {{ case.status }}
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-2 uppercase tracking-widest">Filed: {{ case.created_at[:10] }}</p>
+                    </div>
+                    <div class="text-slate-600 group-hover:text-amber-500 transition-colors">
+                        <i class="fas fa-chevron-right text-lg"></i>
+                    </div>
+                </div>
+            </a>
+            {% else %}
+            <div class="text-center py-20 border-2 border-dashed border-slate-800 rounded-3xl">
+                <i class="fas fa-briefcase text-4xl text-slate-700 mb-4"></i>
+                <p class="text-slate-500">No active legal matters found on this account.</p>
+                <a href="/" class="text-amber-500 hover:underline mt-4 inline-block">Initiate a New Case</a>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+</body>
+</html>

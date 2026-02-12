@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Snell & Wilmer | Elite HOA & Litigation Counsel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-bg {
+            background: linear-gradient(rgba(2, 6, 23, 0.8), rgba(2, 6, 23, 0.8)), 
+                        url('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover; background-position: center;
+        }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-200">
+    <nav class="p-8 flex justify-between items-center max-w-7xl mx-auto fixed top-0 w-full z-50 glass rounded-b-3xl">
+        <div class="text-2xl font-serif tracking-widest text-amber-500 font-bold">SNELL & WILMER</div>
+        <div class="space-x-8 text-sm uppercase tracking-widest hidden md:flex">
+            <a href="#services" class="hover:text-amber-500 transition">Firm Profile</a>
+            <a href="/dashboard" class="bg-amber-600 text-white px-8 py-3 rounded-full font-bold">Client Portal</a>
+        </div>
+    </nav>
+
+    <header class="hero-bg h-screen flex flex-col justify-center items-center text-center px-4">
+        <h1 class="text-6xl md:text-8xl font-serif mb-6 text-white leading-tight">Elite Advocacy.<br><span class="text-amber-500 italic">Proven Results.</span></h1>
+        <p class="max-w-2xl mx-auto text-slate-300 text-xl mb-12">Specializing in high-stakes HOA disputes and trial litigation. Register below to initialize your legal file.</p>
+        
+        <form action="/create-case" method="POST" class="glass p-2 rounded-full flex max-w-xl w-full">
+            <input type="email" name="email" placeholder="Enter Business Email" class="bg-transparent px-6 py-3 w-full outline-none" required>
+            <input type="hidden" name="title" value="New Legal Inquiry">
+            <button type="submit" class="bg-amber-600 px-8 py-3 rounded-full font-bold hover:bg-amber-700 transition">START CASE</button>
+        </form>
+    </header>
+</body>
+</html>

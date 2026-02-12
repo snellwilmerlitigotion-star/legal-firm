@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lawyer Control Tower | Snell & Wilmer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .case-card { transition: all 0.3s ease; }
+        .case-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-900 font-sans antialiased">
+
+    <nav class="bg-[#0f172a] text-white px-8 py-4 shadow-2xl flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-4">
+            <div class="bg-amber-500 p-2 rounded-lg">
+                <i class="fas fa-gavel text-slate-900"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-black tracking-[0.2em] uppercase">Control Tower</h1>
+                <p class="text-[10px] text-amber-500/70 font-mono">INTERNAL DISPATCH v2.4</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="text-right">
+                <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Counsel Status</p>
+                <p class="text-xs text-green-400 flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-green-400 rounded-full pulse-dot"></span> SECURE & ACTIVE
+                </p>
+            </div>
+            <a href="/lawyer-logout" class="bg-slate-800 hover:bg-red-900/40 text-xs px-4 py-2 rounded-md border border-slate-700 transition">LOGOUT</a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-8" id="adminMain">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Active Litigations</p>
+                <p class="text-3xl font-serif text-slate-800 mt-1">{{ cases|length }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Pending Review</p>
+                <p class="text-3xl font-serif text-amber-600 mt-1">
+                    {{ cases | selectattr('status', 'equalto', 'Reviewing') | list | length }}
+                </p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Server Time (UTC)</p>
+                <p class="text-3xl font-serif text-slate-800 mt-1" id="clock">00:00</p>
+            </div>
+        </div>
+
+        <div class="space-y-6" id="caseContainer">
+            {% for case in cases %}
+            <div class="case-card bg-white rounded-2xl border border-slate-200 p-6 md:p-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+                    <div class="flex gap-5">
+                        <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400">
+                            <i class="fas fa-file-invoice text-2xl"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold text-amber-600 uppercase tracking-widest">{{ case.user_email }}</span>
+                            <h2 class="text-2xl font-serif text-slate-800 leading-tight">{{ case.title }}</h2>
+                            <p class="text-[10px] font-mono text-slate-400 mt-1 uppercase">{{ case.id }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="flex flex-col">
+                            <label class="text-[9px] text-slate-400 font-bold uppercase mb-1">Update Status</label>
+                            <select onchange="updateStatus('{{ case.id }}', this.value)" 
+                                    class="bg-slate-50 border border-slate-200 text-xs font-bold px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-amber-500 transition">
+                                <option value="Reviewing" {{ 'selected' if case.status == 'Reviewing' }}>Reviewing</option>
+                                <option value="Negotiating" {{ 'selected' if case.status == 'Negotiating' }}>Negotiating</option>
+                                <option value="Filing" {{ 'selected' if case.status == 'Filing' }}>Filing</option>
+                                <option value="Won" {{ 'selected' if case.status == 'Won' }}>Won</option>
+                            </select>
+                        </div>
+                        <a href="/case/{{ case.id }}" target="_blank" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-amber-600 transition self-end">
+                            <i class="fas fa-external-link-alt text-[10px]"></i> OPEN ROOM
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-2 flex items-center border border-slate-200 focus-within:border-amber-500/50 transition">
+                    <input type="text" id="reply-{{ case.id }}" 
+                           placeholder="Type immediate response (USDT addresses, fee quotes...)" 
+                           class="w-full bg-transparent px-4 py-3 outline-none text-sm text-slate-700 font-medium"
+                           onkeypress="if(event.key === 'Enter') sendReply('{{ case.id }}')">
+                    <button onclick="sendReply('{{ case.id }}')" 
+                            class="bg-white text-slate-900 border border-slate-200 px-6 py-2.5 rounded-xl text-xs font-black uppercase hover:bg-amber-500 hover:border-amber-500 transition shadow-sm">
+                        Send Dispatch
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <script>
+        // 1. CLOCK
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toISOString().substring(11, 16);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // 2. REAL-TIME POLLING (Check for new client messages every 5s)
+        async function refreshData() {
+            try {
+                const response = await fetch(window.location.href);
+                const text = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                
+                // Update the case list if something changed
+                document.getElementById('caseContainer').innerHTML = doc.getElementById('caseContainer').innerHTML;
+            } catch (e) { console.error("Poll failed"); }
+        }
+        setInterval(refreshData, 5000);
+
+        // 3. ADMIN ACTIONS
+        async function sendReply(caseId) {
+            const input = document.getElementById('reply-' + caseId);
+            const content = input.value.trim();
+            if (!content) return;
+
+            input.disabled = true;
+            input.placeholder = "Sending...";
+
+            await fetch('/admin/reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ case_id: caseId, content: content })
+            });
+            
+            input.value = '';
+            input.disabled = false;
+            input.placeholder = "Dispatch sent. Type another...";
+            refreshData();
+        }
+
+        async function updateStatus(caseId, status) {
+            await fetch('/admin/update-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ case_id: caseId, status: status })
+            });
+            // Visual feedback
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-5 right-5 bg-slate-900 text-amber-500 px-6 py-3 rounded-full text-xs font-bold shadow-2xl z-[100]";
+            toast.innerText = "CASE STATUS UPDATED TO: " + status;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
