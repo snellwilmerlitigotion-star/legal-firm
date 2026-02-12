@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # Security Config
 app.secret_key = "law_firm_secure_key_2026"
-ADMIN_PASSWORD = "@Loginlocal2452"  # Set your firm's secret password here
+ADMIN_PASSWORD = "@Loginlocal2452"  # Firm's secret password
 
 # Initialize Supabase
 url = os.getenv("SUPABASE_URL")
@@ -31,11 +31,25 @@ def dashboard():
 
 @app.route('/create-case', methods=['POST'])
 def create_case():
-    email = request.form.get('email')
-    session['user'] = email
-    title = request.form.get('title') or "HOA Dispute Inquiry"
+    # Normalize email: strip spaces and make lowercase to prevent duplicates
+    raw_email = request.form.get('email')
+    if not raw_email:
+        return redirect('/')
     
-    # Initialize a new legal file in the database
+    email = raw_email.strip().lower()
+    session['user'] = email
+    
+    # FEATURE: Smart Case Check
+    # Check if a case already exists for this email
+    check_existing = supabase.table("cases").select("*").eq("user_email", email).execute()
+    
+    if check_existing.data:
+        # If client exists, don't create a new case, just take them to their dashboard
+        return redirect(url_for('dashboard'))
+    
+    # If brand new client, initialize their first legal file
+    title = request.form.get('title') or "New Litigation Inquiry"
+    
     supabase.table("cases").insert({
         "user_email": email, 
         "title": title, 
@@ -58,14 +72,12 @@ def send_message():
     data = request.json
     supabase.table("messages").insert({
         "case_id": data.get('case_id'),
-        "sender": data.get('sender'), # Expects 'client' or 'lawyer'
+        "sender": data.get('sender'), # 'client' or 'lawyer'
         "content": data.get('content')
     }).execute()
     return jsonify({"status": "sent"})
 
 # --- LAWYER ADMIN ROUTES (PROTECTED) ---
-
-
 
 @app.route('/lawyer-admin', methods=['GET', 'POST'])
 def lawyer_admin():
