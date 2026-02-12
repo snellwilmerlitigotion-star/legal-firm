@@ -6,6 +6,7 @@
     <title>Case #{{ case.id[:8] }} | Secure Room</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.jpg') }}">
     <style>
         .chat-box { height: 450px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #475569 transparent; scroll-behavior: smooth; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
