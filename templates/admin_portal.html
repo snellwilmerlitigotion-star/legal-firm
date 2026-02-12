@@ -110,18 +110,32 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // 2. REAL-TIME POLLING (Check for new client messages every 5s)
+        // 2. SMART REFRESH (Fixed to protect your typing)
         async function refreshData() {
+            // Check if the lawyer is currently typing in a reply box
+            const activeElement = document.activeElement;
+            const isTyping = activeElement && activeElement.tagName === 'INPUT' && activeElement.value.length > 0;
+
+            // If lawyer is typing, we skip this refresh cycle to prevent cursor loss
+            if (isTyping) return;
+
             try {
                 const response = await fetch(window.location.href);
                 const text = await response.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(text, 'text/html');
                 
-                // Update the case list if something changed
-                document.getElementById('caseContainer').innerHTML = doc.getElementById('caseContainer').innerHTML;
-            } catch (e) { console.error("Poll failed"); }
+                const newContent = doc.getElementById('caseContainer').innerHTML;
+                const currentContainer = document.getElementById('caseContainer');
+
+                // Only update the DOM if data has actually changed
+                if (currentContainer.innerHTML !== newContent) {
+                    currentContainer.innerHTML = newContent;
+                }
+            } catch (e) { console.error("Poll failed", e); }
         }
+        
+        // Poll every 5 seconds
         setInterval(refreshData, 5000);
 
         // 3. ADMIN ACTIONS
@@ -130,19 +144,26 @@
             const content = input.value.trim();
             if (!content) return;
 
+            // Block input temporarily during send
             input.disabled = true;
-            input.placeholder = "Sending...";
+            const originalPlaceholder = input.placeholder;
+            input.placeholder = "Dispatching...";
 
-            await fetch('/admin/reply', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ case_id: caseId, content: content })
-            });
-            
-            input.value = '';
-            input.disabled = false;
-            input.placeholder = "Dispatch sent. Type another...";
-            refreshData();
+            try {
+                await fetch('/admin/reply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ case_id: caseId, content: content })
+                });
+                
+                input.value = '';
+                input.disabled = false;
+                input.placeholder = originalPlaceholder;
+                refreshData(); // Immediate update after successful reply
+            } catch (err) {
+                input.disabled = false;
+                alert("Failed to send. Please check connection.");
+            }
         }
 
         async function updateStatus(caseId, status) {
@@ -151,10 +172,10 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ case_id: caseId, status: status })
             });
-            // Visual feedback
+            
             const toast = document.createElement('div');
-            toast.className = "fixed bottom-5 right-5 bg-slate-900 text-amber-500 px-6 py-3 rounded-full text-xs font-bold shadow-2xl z-[100]";
-            toast.innerText = "CASE STATUS UPDATED TO: " + status;
+            toast.className = "fixed bottom-5 right-5 bg-slate-900 text-amber-500 px-6 py-3 rounded-full text-xs font-bold shadow-2xl z-[100] border border-amber-500/30";
+            toast.innerText = "CASE STATUS UPDATED: " + status;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         }
